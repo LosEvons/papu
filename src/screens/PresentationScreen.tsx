@@ -17,9 +17,12 @@ import {
   SafeAreaView,
   PanResponder,
   Animated,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RootStackParamList } from '../navigation';
 import { useAppData } from '../contexts/AppDataContext';
@@ -45,6 +48,7 @@ const VERTICAL_TOLERANCE = 50;
 export function PresentationScreen() {
   const navigation = useNavigation<PresentationScreenNavigationProp>();
   const { data } = useAppData();
+  const insets = useSafeAreaInsets();
 
   const [selectedCardId, setSelectedCardId] = useState<UUID | null>(null);
   const [searchVisible, setSearchVisible] = useState(false);
@@ -220,9 +224,10 @@ export function PresentationScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top bar with manage and search buttons */}
-      <View style={styles.topBar}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
+      {/* Top bar with manage and search buttons - with safe area insets */}
+      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) + 8 }]}>
         <TouchableOpacity
           style={styles.manageButton}
           onPress={handleGoToManagement}
@@ -414,7 +419,7 @@ export function PresentationScreen() {
           />
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
