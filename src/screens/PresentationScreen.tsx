@@ -44,6 +44,8 @@ const VERTICAL_TOLERANCE = 50;
 const MIN_TOP_PADDING = 16;
 /** Additional padding below safe area inset */
 const TOP_BAR_PADDING = 8;
+/** Margin between favorite cards in carousel */
+const FAVORITE_CARD_MARGIN = 16;
 
 /**
  * Presentation screen component.
@@ -337,7 +339,7 @@ export function PresentationScreen() {
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   pagingEnabled
-                  snapToInterval={screenWidth * 0.7 + 16}
+                  snapToInterval={screenWidth * 0.7 + FAVORITE_CARD_MARGIN}
                   decelerationRate="fast"
                   contentContainerStyle={styles.favoritesCarousel}
                   keyExtractor={(item) => item.id}
@@ -721,7 +723,7 @@ const styles = StyleSheet.create({
   },
   favoriteCard: {
     width: screenWidth * 0.7,
-    marginRight: 16,
+    marginRight: FAVORITE_CARD_MARGIN,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     borderWidth: 3,

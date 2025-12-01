@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Platform, StatusBar as RNStatusBar, View, StyleSheet } from 'react-native';
+import { Platform, StatusBar as RNStatusBar } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
