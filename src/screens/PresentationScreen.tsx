@@ -29,8 +29,10 @@ type PresentationScreenNavigationProp = NativeStackNavigationProp<RootStackParam
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-/** Swipe threshold to trigger question mode */
+/** Swipe threshold to trigger actions */
 const SWIPE_THRESHOLD = 50;
+/** Vertical swipe threshold to close card */
+const SWIPE_UP_THRESHOLD = 80;
 
 /**
  * Presentation screen component.
@@ -44,34 +46,55 @@ export function PresentationScreen() {
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isQuestionMode, setIsQuestionMode] = useState(false);
+  const [showGestureHints, setShowGestureHints] = useState(true);
 
-  // Animation value for swipe feedback
-  const swipeAnim = useRef(new Animated.Value(0)).current;
+  // Animation values for swipe feedback
+  const swipeAnimX = useRef(new Animated.Value(0)).current;
+  const swipeAnimY = useRef(new Animated.Value(0)).current;
 
   // Pan responder for swipe gestures (only applied when a card is selected via conditional spread)
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only respond to horizontal swipes
-        return Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dy) < 50;
+        // Respond to both horizontal and vertical swipes
+        return Math.abs(gestureState.dx) > 10 || Math.abs(gestureState.dy) > 10;
       },
       onPanResponderMove: (_, gestureState) => {
-        // Only track rightward swipes
+        // Track horizontal swipes (right only for question mode)
         if (gestureState.dx > 0) {
-          swipeAnim.setValue(gestureState.dx);
+          swipeAnimX.setValue(gestureState.dx);
+        }
+        // Track upward swipes (negative dy)
+        if (gestureState.dy < 0) {
+          swipeAnimY.setValue(gestureState.dy);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx > SWIPE_THRESHOLD) {
-          // Swipe right detected - toggle question mode
+        // Hide gesture hints after first interaction
+        setShowGestureHints(false);
+        
+        // Swipe up detected - close the card
+        if (gestureState.dy < -SWIPE_UP_THRESHOLD) {
+          setSelectedCardId(null);
+          setIsQuestionMode(false);
+        }
+        // Swipe right detected - toggle question mode
+        else if (gestureState.dx > SWIPE_THRESHOLD && Math.abs(gestureState.dy) < 50) {
           setIsQuestionMode((prev) => !prev);
         }
-        // Reset animation
-        Animated.spring(swipeAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-        }).start();
+        
+        // Reset animations
+        Animated.parallel([
+          Animated.spring(swipeAnimX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }),
+          Animated.spring(swipeAnimY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }),
+        ]).start();
       },
     })
   ).current;
@@ -138,14 +161,6 @@ export function PresentationScreen() {
   };
 
   /**
-   * Clear current card selection
-   */
-  const handleClearCard = () => {
-    setSelectedCardId(null);
-    setIsQuestionMode(false);
-  };
-
-  /**
    * Navigate to create a new card
    */
   const handleCreateCard = () => {
@@ -206,15 +221,12 @@ export function PresentationScreen() {
       {/* Main card display area */}
       <View style={styles.cardContainer} {...(selectedCard ? panResponder.panHandlers : {})}>
         {selectedCard ? (
-          <TouchableOpacity
+          <View
             style={[
               styles.cardDisplay,
               { borderColor: CARD_CATEGORY_COLORS[selectedCard.category || 'other'] },
             ]}
-            onPress={handleClearCard}
-            activeOpacity={0.9}
-            accessibilityLabel={`Displayed card: ${selectedCard.title}${isQuestionMode ? ' (question)' : ''}. Tap to clear. Swipe right to toggle question mode.`}
-            accessibilityRole="button"
+            accessibilityLabel={`Displayed card: ${selectedCard.title}${isQuestionMode ? ' (question)' : ''}. Swipe up to close. Swipe right for question mode.`}
           >
             {selectedCard.imageUri ? (
               <Image
@@ -235,7 +247,23 @@ export function PresentationScreen() {
                 { backgroundColor: CARD_CATEGORY_COLORS[selectedCard.category || 'other'] },
               ]}
             />
-          </TouchableOpacity>
+            
+            {/* Gesture hints overlay - shown initially */}
+            {showGestureHints && (
+              <View style={styles.gestureHintsOverlay}>
+                {/* Swipe up hint */}
+                <View style={styles.gestureHintTop}>
+                  <Text style={styles.gestureHintIcon}>↑</Text>
+                  <Text style={styles.gestureHintText}>Swipe up to close</Text>
+                </View>
+                {/* Swipe right hint */}
+                <View style={styles.gestureHintRight}>
+                  <Text style={styles.gestureHintIcon}>→</Text>
+                  <Text style={styles.gestureHintText}>Swipe right for ?</Text>
+                </View>
+              </View>
+            )}
+          </View>
         ) : (
           <TouchableOpacity
             style={styles.emptyState}
@@ -510,5 +538,39 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  gestureHintsOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  gestureHintTop: {
+    position: 'absolute',
+    top: 40,
+    alignItems: 'center',
+  },
+  gestureHintRight: {
+    position: 'absolute',
+    right: 20,
+    alignItems: 'center',
+  },
+  gestureHintIcon: {
+    fontSize: 36,
+    color: '#fff',
+    marginBottom: 8,
+  },
+  gestureHintText: {
+    fontSize: 14,
+    color: '#fff',
+    textAlign: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
 });
