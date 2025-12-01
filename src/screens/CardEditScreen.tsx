@@ -23,7 +23,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { RootStackParamList } from '../navigation';
 import { useAppData } from '../contexts/AppDataContext';
 import { Card, Group, UUID, CardCategory, CARD_CATEGORIES, CARD_CATEGORY_LABELS, CARD_CATEGORY_COLORS } from '../models/types';
-import { COLORS, SPACING } from '../utils/theme';
+import { COLORS } from '../utils/theme';
 
 /** Image picker configuration options */
 const IMAGE_PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {

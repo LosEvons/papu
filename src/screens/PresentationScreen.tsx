@@ -659,15 +659,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     paddingVertical: SPACING.xl,
-    paddingBottom: 40,
+    paddingBottom: SPACING.xxxl,
   },
   tapToSearchArea: {
-    padding: 40,
+    padding: SPACING.xxxl,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.3)',
     borderStyle: 'dashed',
     borderRadius: 16,
-    marginBottom: 40,
+    marginBottom: SPACING.xxxl,
   },
   emptyStateText: {
     fontSize: 20,

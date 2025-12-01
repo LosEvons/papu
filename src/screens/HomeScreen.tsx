@@ -23,6 +23,7 @@ import { Card, Group, UUID } from '../models/types';
 import { FAB } from '../components/FAB';
 import { GroupPill } from '../components/GroupPill';
 import { CardRow } from '../components/CardRow';
+// Theme constants can be used for future styling consistency
 import { COLORS, SPACING, BORDER_RADIUS } from '../utils/theme';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;

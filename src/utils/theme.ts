@@ -60,6 +60,7 @@ export const SPACING = {
   lg: 16,
   xl: 20,
   xxl: 24,
+  xxxl: 40,
 } as const;
 
 /** Border radius values */
