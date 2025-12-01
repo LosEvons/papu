@@ -22,7 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { RootStackParamList } from '../navigation';
 import { useAppData } from '../contexts/AppDataContext';
-import { Card, Group, UUID } from '../models/types';
+import { Card, Group, UUID, CardCategory, CARD_CATEGORIES, CARD_CATEGORY_LABELS, CARD_CATEGORY_COLORS } from '../models/types';
 import { HEX_COLOR_REGEX } from '../utils/constants';
 
 /** Image picker configuration options */
@@ -58,6 +58,9 @@ export function CardEditScreen({ navigation, route }: CardEditScreenProps) {
   );
   const [selectedGroupIds, setSelectedGroupIds] = useState<UUID[]>(
     existingCard?.groupIds || []
+  );
+  const [category, setCategory] = useState<CardCategory>(
+    existingCard?.category || 'other'
   );
   const [titleError, setTitleError] = useState<string | null>(null);
 
@@ -100,6 +103,7 @@ export function CardEditScreen({ navigation, route }: CardEditScreenProps) {
       imageUri,
       groupIds: selectedGroupIds,
       favorite: existingCard?.favorite || false,
+      category,
       createdAt: existingCard?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -237,6 +241,37 @@ export function CardEditScreen({ navigation, route }: CardEditScreenProps) {
             returnKeyType="next"
           />
           {titleError && <Text style={styles.errorText}>{titleError}</Text>}
+        </View>
+
+        {/* Category selector */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Category *</Text>
+          <View style={styles.categoryList}>
+            {CARD_CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={[
+                  styles.categoryChip,
+                  category === cat && styles.categoryChipSelected,
+                  { borderColor: CARD_CATEGORY_COLORS[cat] },
+                  category === cat && { backgroundColor: CARD_CATEGORY_COLORS[cat] },
+                ]}
+                onPress={() => setCategory(cat)}
+                accessibilityLabel={`${CARD_CATEGORY_LABELS[cat]}${category === cat ? ', selected' : ''}`}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: category === cat }}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    category === cat && styles.categoryChipTextSelected,
+                  ]}
+                >
+                  {CARD_CATEGORY_LABELS[cat]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Text input */}
@@ -457,6 +492,33 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 100,
     paddingTop: 12,
+  },
+  categoryList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 8,
+    minHeight: 44,
+    borderWidth: 2,
+  },
+  categoryChipSelected: {
+    // Background color is set dynamically
+  },
+  categoryChipText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  categoryChipTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
   },
   imagePreviewContainer: {
     alignItems: 'center',

@@ -3,7 +3,7 @@
  * Provides a minimalist full-screen view of a single card with search functionality.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,17 +15,22 @@ import {
   FlatList,
   Dimensions,
   SafeAreaView,
+  PanResponder,
+  Animated,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 
 import { RootStackParamList } from '../navigation';
 import { useAppData } from '../contexts/AppDataContext';
-import { Card, UUID } from '../models/types';
+import { Card, UUID, CARD_CATEGORY_COLORS } from '../models/types';
 
 type PresentationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Presentation'>;
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+/** Swipe threshold to trigger question mode */
+const SWIPE_THRESHOLD = 50;
 
 /**
  * Presentation screen component.
@@ -38,6 +43,38 @@ export function PresentationScreen() {
   const [selectedCardId, setSelectedCardId] = useState<UUID | null>(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isQuestionMode, setIsQuestionMode] = useState(false);
+
+  // Animation value for swipe feedback
+  const swipeAnim = useRef(new Animated.Value(0)).current;
+
+  // Pan responder for swipe gestures
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to horizontal swipes when a card is selected
+        return Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dy) < 50;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Only track rightward swipes
+        if (gestureState.dx > 0) {
+          swipeAnim.setValue(gestureState.dx);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx > SWIPE_THRESHOLD) {
+          // Swipe right detected - toggle question mode
+          setIsQuestionMode((prev) => !prev);
+        }
+        // Reset animation
+        Animated.spring(swipeAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+      },
+    })
+  ).current;
 
   /**
    * Get the currently selected card
@@ -73,6 +110,7 @@ export function PresentationScreen() {
    */
   const handleSelectCard = (cardId: UUID) => {
     setSelectedCardId(cardId);
+    setIsQuestionMode(false); // Reset question mode when selecting new card
     setSearchVisible(false);
     setSearchQuery('');
   };
@@ -104,6 +142,16 @@ export function PresentationScreen() {
    */
   const handleClearCard = () => {
     setSelectedCardId(null);
+    setIsQuestionMode(false);
+  };
+
+  /**
+   * Navigate to create a new card
+   */
+  const handleCreateCard = () => {
+    setSearchVisible(false);
+    setSearchQuery('');
+    navigation.navigate('CardEdit', {});
   };
 
   /**
@@ -156,13 +204,16 @@ export function PresentationScreen() {
       </View>
 
       {/* Main card display area */}
-      <View style={styles.cardContainer}>
+      <View style={styles.cardContainer} {...(selectedCard ? panResponder.panHandlers : {})}>
         {selectedCard ? (
           <TouchableOpacity
-            style={styles.cardDisplay}
+            style={[
+              styles.cardDisplay,
+              { borderColor: CARD_CATEGORY_COLORS[selectedCard.category] || '#666' },
+            ]}
             onPress={handleClearCard}
             activeOpacity={0.9}
-            accessibilityLabel={`Displayed card: ${selectedCard.title}. Tap to clear.`}
+            accessibilityLabel={`Displayed card: ${selectedCard.title}${isQuestionMode ? ' (question)' : ''}. Tap to clear. Swipe right to toggle question mode.`}
             accessibilityRole="button"
           >
             {selectedCard.imageUri ? (
@@ -177,15 +228,35 @@ export function PresentationScreen() {
             {selectedCard.text ? (
               <Text style={styles.cardText}>{selectedCard.text}</Text>
             ) : null}
+            {/* Category indicator */}
+            <View
+              style={[
+                styles.categoryIndicator,
+                { backgroundColor: CARD_CATEGORY_COLORS[selectedCard.category] || '#666' },
+              ]}
+            />
           </TouchableOpacity>
         ) : (
-          <View style={styles.emptyState}>
+          <TouchableOpacity
+            style={styles.emptyState}
+            onPress={handleOpenSearch}
+            activeOpacity={0.7}
+            accessibilityLabel="Tap to search and select a card"
+            accessibilityRole="button"
+          >
             <Text style={styles.emptyStateText}>
-              Tap 🔍 to search and select a card
+              Tap anywhere to search and select a card
             </Text>
-          </View>
+          </TouchableOpacity>
         )}
       </View>
+
+      {/* Question mark overlay */}
+      {isQuestionMode && selectedCard && (
+        <View style={styles.questionOverlay} pointerEvents="none">
+          <Text style={styles.questionMark}>?</Text>
+        </View>
+      )}
 
       {/* Search Modal */}
       <Modal
@@ -232,8 +303,16 @@ export function PresentationScreen() {
                 <Text style={styles.searchEmptyText}>
                   {searchQuery
                     ? 'No cards match your search.'
-                    : 'No cards available. Create some cards first!'}
+                    : 'No cards available.'}
                 </Text>
+                <TouchableOpacity
+                  style={styles.createCardButton}
+                  onPress={handleCreateCard}
+                  accessibilityLabel="Create a new card"
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.createCardButtonText}>+ Create Card</Text>
+                </TouchableOpacity>
               </View>
             }
           />
@@ -277,6 +356,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
+    borderLeftWidth: 6,
+    paddingLeft: 16,
   },
   cardImage: {
     width: screenWidth - 48,
@@ -295,10 +376,34 @@ const styles = StyleSheet.create({
     color: '#ccc',
     textAlign: 'center',
   },
+  categoryIndicator: {
+    position: 'absolute',
+    bottom: 40,
+    width: 60,
+    height: 6,
+    borderRadius: 3,
+  },
+  questionOverlay: {
+    position: 'absolute',
+    top: 80,
+    right: 24,
+    backgroundColor: 'rgba(255, 193, 7, 0.9)',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  questionMark: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#000',
+  },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
   emptyStateText: {
     fontSize: 20,
@@ -390,5 +495,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  createCardButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  createCardButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
