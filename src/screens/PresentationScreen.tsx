@@ -23,7 +23,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { RootStackParamList } from '../navigation';
 import { useAppData } from '../contexts/AppDataContext';
-import { Card, UUID, CARD_CATEGORY_COLORS } from '../models/types';
+import { Card, UUID, CARD_CATEGORY_COLORS, CardCategory, CARD_CATEGORIES, CARD_CATEGORY_LABELS } from '../models/types';
 
 type PresentationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Presentation'>;
 
@@ -51,6 +51,7 @@ export function PresentationScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isQuestionMode, setIsQuestionMode] = useState(false);
   const [showGestureHints, setShowGestureHints] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState<CardCategory | null>(null);
 
   // Animation values for swipe feedback
   const swipeAnimX = useRef(new Animated.Value(0)).current;
@@ -117,6 +118,11 @@ export function PresentationScreen() {
   const filteredCards = useMemo(() => {
     let cards = [...data.cards];
 
+    // Filter by category if a category filter is set
+    if (categoryFilter) {
+      cards = cards.filter((card) => (card.category || 'other') === categoryFilter);
+    }
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       cards = cards.filter(
@@ -130,7 +136,7 @@ export function PresentationScreen() {
     cards.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
     return cards;
-  }, [data.cards, searchQuery]);
+  }, [data.cards, searchQuery, categoryFilter]);
 
   /**
    * Handle card selection from search results
@@ -138,6 +144,7 @@ export function PresentationScreen() {
   const handleSelectCard = (cardId: UUID) => {
     setSelectedCardId(cardId);
     setIsQuestionMode(false); // Reset question mode when selecting new card
+    setCategoryFilter(null); // Clear category filter
     setSearchVisible(false);
     setSearchQuery('');
   };
@@ -155,13 +162,14 @@ export function PresentationScreen() {
   const handleCloseSearch = () => {
     setSearchVisible(false);
     setSearchQuery('');
+    setCategoryFilter(null);
   };
 
   /**
-   * Exit presentation mode
+   * Navigate to card management screen
    */
-  const handleExit = () => {
-    navigation.goBack();
+  const handleGoToManagement = () => {
+    navigation.navigate('Home');
   };
 
   /**
@@ -170,7 +178,16 @@ export function PresentationScreen() {
   const handleCreateCard = () => {
     setSearchVisible(false);
     setSearchQuery('');
+    setCategoryFilter(null);
     navigation.navigate('CardEdit', {});
+  };
+
+  /**
+   * Open search modal with category filter
+   */
+  const handleSelectCategory = (category: CardCategory) => {
+    setCategoryFilter(category);
+    setSearchVisible(true);
   };
 
   /**
@@ -201,15 +218,15 @@ export function PresentationScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top bar with exit and search buttons */}
+      {/* Top bar with manage and search buttons */}
       <View style={styles.topBar}>
         <TouchableOpacity
-          style={styles.topButton}
-          onPress={handleExit}
-          accessibilityLabel="Exit presentation mode"
+          style={styles.manageButton}
+          onPress={handleGoToManagement}
+          accessibilityLabel="Manage cards"
           accessibilityRole="button"
         >
-          <Text style={styles.topButtonText}>✕</Text>
+          <Text style={styles.manageButtonText}>✏️ Manage</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -269,17 +286,43 @@ export function PresentationScreen() {
             )}
           </View>
         ) : (
-          <TouchableOpacity
-            style={styles.emptyState}
-            onPress={handleOpenSearch}
-            activeOpacity={0.7}
-            accessibilityLabel="Tap to search and select a card"
-            accessibilityRole="button"
-          >
-            <Text style={styles.emptyStateText}>
-              Tap anywhere to search and select a card
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.emptyState}>
+            {/* Tap to search area */}
+            <TouchableOpacity
+              style={styles.tapToSearchArea}
+              onPress={handleOpenSearch}
+              activeOpacity={0.7}
+              accessibilityLabel="Tap to search and select a card"
+              accessibilityRole="button"
+            >
+              <Text style={styles.emptyStateText}>
+                Tap here to search all cards
+              </Text>
+            </TouchableOpacity>
+
+            {/* Category buttons */}
+            <View style={styles.categoryButtonsContainer}>
+              <Text style={styles.categoryLabel}>Browse by category:</Text>
+              <View style={styles.categoryButtons}>
+                {CARD_CATEGORIES.map((category) => (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.categoryButton,
+                      { backgroundColor: CARD_CATEGORY_COLORS[category] },
+                    ]}
+                    onPress={() => handleSelectCategory(category)}
+                    accessibilityLabel={`Browse ${CARD_CATEGORY_LABELS[category]} cards`}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.categoryButtonText}>
+                      {CARD_CATEGORY_LABELS[category]}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
         )}
       </View>
 
@@ -307,9 +350,27 @@ export function PresentationScreen() {
             >
               <Text style={styles.searchCloseText}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.searchTitle}>Find Card</Text>
+            <Text style={styles.searchTitle}>
+              {categoryFilter ? CARD_CATEGORY_LABELS[categoryFilter] : 'Find Card'}
+            </Text>
             <View style={styles.searchCloseButton} />
           </View>
+
+          {/* Category filter indicator */}
+          {categoryFilter && (
+            <View style={[styles.categoryFilterBanner, { backgroundColor: CARD_CATEGORY_COLORS[categoryFilter] }]}>
+              <Text style={styles.categoryFilterText}>
+                Showing {CARD_CATEGORY_LABELS[categoryFilter]} cards
+              </Text>
+              <TouchableOpacity
+                onPress={() => setCategoryFilter(null)}
+                accessibilityLabel="Clear category filter"
+                accessibilityRole="button"
+              >
+                <Text style={styles.categoryFilterClear}>✕ Clear</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.searchInputContainer}>
             <TextInput
@@ -317,7 +378,7 @@ export function PresentationScreen() {
               placeholder="Search cards..."
               value={searchQuery}
               onChangeText={setSearchQuery}
-              autoFocus
+              autoFocus={!categoryFilter}
               accessibilityLabel="Search cards"
               accessibilityHint="Type to filter cards by title or text"
               clearButtonMode="while-editing"
@@ -376,6 +437,20 @@ const styles = StyleSheet.create({
   topButtonText: {
     fontSize: 20,
     color: '#fff',
+  },
+  manageButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  manageButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
   },
   cardContainer: {
     flex: 1,
@@ -437,10 +512,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
+  tapToSearchArea: {
+    padding: 40,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderStyle: 'dashed',
+    borderRadius: 16,
+    marginBottom: 40,
+  },
   emptyStateText: {
     fontSize: 20,
-    color: '#666',
+    color: '#888',
     textAlign: 'center',
+  },
+  categoryButtonsContainer: {
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+  categoryLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 16,
+  },
+  categoryButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  categoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  categoryButtonText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  categoryFilterBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  categoryFilterText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  categoryFilterClear: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
   },
   searchModal: {
     flex: 1,

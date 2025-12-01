@@ -27,15 +27,21 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /**
  * Main navigation component with native stack navigator.
+ * Presentation mode is the default/home screen.
  */
 export function AppNavigation() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName="Presentation">
+        <Stack.Screen
+          name="Presentation"
+          component={PresentationScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ title: 'Cards' }}
+          options={{ title: 'Manage Cards' }}
         />
         <Stack.Screen
           name="CardEdit"
@@ -51,11 +57,6 @@ export function AppNavigation() {
           name="Settings"
           component={SettingsScreen}
           options={{ title: 'Settings' }}
-        />
-        <Stack.Screen
-          name="Presentation"
-          component={PresentationScreen}
-          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

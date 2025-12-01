@@ -1,6 +1,6 @@
 /**
  * Home screen displaying the card list with filtering and search.
- * Main entry point for browsing and managing cards.
+ * This is the card management screen, accessed from the presentation mode.
  */
 
 import React, { useState, useMemo, useLayoutEffect } from 'react';
@@ -47,10 +47,10 @@ export function HomeScreen() {
         <TouchableOpacity
           onPress={() => navigation.navigate('Presentation')}
           style={styles.headerButton}
-          accessibilityLabel="Enter presentation mode"
+          accessibilityLabel="Back to presentation mode"
           accessibilityRole="button"
         >
-          <Text style={styles.headerButtonText}>▶️</Text>
+          <Text style={styles.headerButtonText}>← Present</Text>
         </TouchableOpacity>
       ),
       headerRight: () => (
