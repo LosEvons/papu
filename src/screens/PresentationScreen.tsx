@@ -195,7 +195,10 @@ export function PresentationScreen() {
    */
   const renderSearchItem = ({ item }: { item: Card }) => (
     <TouchableOpacity
-      style={styles.searchResultItem}
+      style={[
+        styles.searchResultItem,
+        { borderLeftColor: CARD_CATEGORY_COLORS[item.category || 'other'] },
+      ]}
       onPress={() => handleSelectCard(item.id)}
       accessibilityLabel={`Select ${item.title}`}
       accessibilityRole="button"
@@ -622,6 +625,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ccc',
     minHeight: 64,
     alignItems: 'center',
+    borderLeftWidth: 4,
   },
   searchResultImage: {
     width: 48,
