@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Platform, StatusBar as RNStatusBar } from 'react-native';
+import { Platform, StatusBar as RNStatusBar, View, StyleSheet } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,16 +28,36 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /**
- * Custom theme with safe area aware header styles
+ * Higher-order component that wraps a screen with safe area padding for Android edge-to-edge
  */
-function useNavigatorTheme() {
-  const insets = useSafeAreaInsets();
-  
-  // Get the status bar height for Android edge-to-edge mode
-  const statusBarHeight = Platform.OS === 'android' 
-    ? Math.max(RNStatusBar.currentHeight || 0, insets.top)
-    : insets.top;
+function withSafeAreaPadding<P extends object>(WrappedComponent: React.ComponentType<P>) {
+  return function SafeAreaPaddedScreen(props: P) {
+    const insets = useSafeAreaInsets();
+    
+    // Get the proper status bar height for Android edge-to-edge mode
+    const statusBarHeight = Platform.OS === 'android' 
+      ? Math.max(RNStatusBar.currentHeight || 0, insets.top)
+      : 0; // iOS handles this automatically with native header
+    
+    return (
+      <View style={[styles.safeAreaContainer, { paddingTop: statusBarHeight }]}>
+        <WrappedComponent {...props} />
+      </View>
+    );
+  };
+}
 
+// Wrapped screen components for Android edge-to-edge compatibility
+const SafeHomeScreen = withSafeAreaPadding(HomeScreen);
+const SafeCardEditScreen = withSafeAreaPadding(CardEditScreen);
+const SafeGroupsScreen = withSafeAreaPadding(GroupsScreen);
+const SafeSettingsScreen = withSafeAreaPadding(SettingsScreen);
+
+/**
+ * Main navigation component with native stack navigator.
+ * Presentation mode is the default/home screen.
+ */
+export function AppNavigation() {
   const screenOptions: NativeStackNavigationOptions = {
     headerStyle: {
       backgroundColor: '#f5f5f5',
@@ -46,21 +66,6 @@ function useNavigatorTheme() {
       fontWeight: '600',
     },
   };
-
-  return { screenOptions, statusBarHeight };
-}
-
-/**
- * Main navigation component with native stack navigator.
- * Presentation mode is the default/home screen.
- */
-export function AppNavigation() {
-  const { screenOptions, statusBarHeight } = useNavigatorTheme();
-
-  // Create a wrapper style for screens that need status bar offset on Android
-  const screenContentStyle = Platform.OS === 'android' && statusBarHeight > 0
-    ? { paddingTop: statusBarHeight }
-    : undefined;
 
   return (
     <NavigationContainer theme={DefaultTheme}>
@@ -77,37 +82,40 @@ export function AppNavigation() {
         />
         <Stack.Screen
           name="Home"
-          component={HomeScreen}
+          component={SafeHomeScreen}
           options={{ 
             title: 'Manage Cards',
-            contentStyle: screenContentStyle,
           }}
         />
         <Stack.Screen
           name="CardEdit"
-          component={CardEditScreen}
+          component={SafeCardEditScreen}
           options={{ 
             title: 'Edit Card',
-            contentStyle: screenContentStyle,
           }}
         />
         <Stack.Screen
           name="Groups"
-          component={GroupsScreen}
+          component={SafeGroupsScreen}
           options={{ 
             title: 'Groups',
-            contentStyle: screenContentStyle,
           }}
         />
         <Stack.Screen
           name="Settings"
-          component={SettingsScreen}
+          component={SafeSettingsScreen}
           options={{ 
             title: 'Settings',
-            contentStyle: screenContentStyle,
           }}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  safeAreaContainer: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+});
