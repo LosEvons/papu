@@ -48,12 +48,12 @@ export function PresentationScreen() {
   // Animation value for swipe feedback
   const swipeAnim = useRef(new Animated.Value(0)).current;
 
-  // Pan responder for swipe gestures
+  // Pan responder for swipe gestures (only applied when a card is selected via conditional spread)
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only respond to horizontal swipes when a card is selected
+        // Only respond to horizontal swipes
         return Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dy) < 50;
       },
       onPanResponderMove: (_, gestureState) => {
@@ -209,7 +209,7 @@ export function PresentationScreen() {
           <TouchableOpacity
             style={[
               styles.cardDisplay,
-              { borderColor: CARD_CATEGORY_COLORS[selectedCard.category] || '#666' },
+              { borderColor: CARD_CATEGORY_COLORS[selectedCard.category || 'other'] },
             ]}
             onPress={handleClearCard}
             activeOpacity={0.9}
@@ -232,7 +232,7 @@ export function PresentationScreen() {
             <View
               style={[
                 styles.categoryIndicator,
-                { backgroundColor: CARD_CATEGORY_COLORS[selectedCard.category] || '#666' },
+                { backgroundColor: CARD_CATEGORY_COLORS[selectedCard.category || 'other'] },
               ]}
             />
           </TouchableOpacity>

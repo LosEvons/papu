@@ -43,8 +43,8 @@ export interface Card {
   groupIds: UUID[];
   /** Whether this card is marked as favorite */
   favorite?: boolean;
-  /** Card category (required): things, actions, describe, or other */
-  category: CardCategory;
+  /** Card category: things, actions, describe, or other. Defaults to 'other' if not set. */
+  category?: CardCategory;
   /** ISO 8601 timestamp of card creation */
   createdAt: string;
   /** ISO 8601 timestamp of last update */
