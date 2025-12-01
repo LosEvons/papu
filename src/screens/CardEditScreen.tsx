@@ -23,7 +23,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { RootStackParamList } from '../navigation';
 import { useAppData } from '../contexts/AppDataContext';
 import { Card, Group, UUID, CardCategory, CARD_CATEGORIES, CARD_CATEGORY_LABELS, CARD_CATEGORY_COLORS } from '../models/types';
-import { HEX_COLOR_REGEX } from '../utils/constants';
+import { COLORS, SPACING } from '../utils/theme';
 
 /** Image picker configuration options */
 const IMAGE_PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
@@ -63,11 +63,6 @@ export function CardEditScreen({ navigation, route }: CardEditScreenProps) {
     existingCard?.category || 'other'
   );
   const [titleError, setTitleError] = useState<string | null>(null);
-
-  // Inline group creation state
-  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
-  const [newGroupColor, setNewGroupColor] = useState('');
 
   // Update header title based on mode
   useLayoutEffect(() => {
@@ -179,40 +174,6 @@ export function CardEditScreen({ navigation, route }: CardEditScreenProps) {
         ? prev.filter((id) => id !== groupId)
         : [...prev, groupId]
     );
-  };
-
-  /**
-   * Handle inline group creation
-   */
-  const handleCreateGroup = () => {
-    if (!newGroupName.trim()) {
-      Alert.alert('Error', 'Group name is required');
-      return;
-    }
-
-    // Validate color format if provided
-    if (newGroupColor && !HEX_COLOR_REGEX.test(newGroupColor)) {
-      Alert.alert('Error', 'Color must be a valid hex color (e.g., #FF0000)');
-      return;
-    }
-
-    const newGroup: Group = {
-      id: uuidv4(),
-      name: newGroupName.trim(),
-      color: newGroupColor.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    dispatch({ type: 'ADD_GROUP', payload: newGroup });
-
-    // Auto-select the new group
-    setSelectedGroupIds((prev) => [...prev, newGroup.id]);
-
-    // Reset inline creation state
-    setNewGroupName('');
-    setNewGroupColor('');
-    setIsCreatingGroup(false);
   };
 
   return (
@@ -333,88 +294,43 @@ export function CardEditScreen({ navigation, route }: CardEditScreenProps) {
         {/* Group assignment */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Groups</Text>
-          <View style={styles.groupList}>
-            {data.groups.map((group: Group) => (
-              <TouchableOpacity
-                key={group.id}
-                style={[
-                  styles.groupChip,
-                  selectedGroupIds.includes(group.id) && styles.groupChipSelected,
-                ]}
-                onPress={() => toggleGroupSelection(group.id)}
-                accessibilityLabel={`${group.name}${
-                  selectedGroupIds.includes(group.id) ? ', selected' : ''
-                }`}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: selectedGroupIds.includes(group.id) }}
-              >
-                {group.color && (
-                  <View
-                    style={[styles.groupColorDot, { backgroundColor: group.color }]}
-                  />
-                )}
-                <Text
+          {data.groups.length > 0 ? (
+            <View style={styles.groupList}>
+              {data.groups.map((group: Group) => (
+                <TouchableOpacity
+                  key={group.id}
                   style={[
-                    styles.groupChipText,
-                    selectedGroupIds.includes(group.id) && styles.groupChipTextSelected,
+                    styles.groupChip,
+                    selectedGroupIds.includes(group.id) && styles.groupChipSelected,
                   ]}
+                  onPress={() => toggleGroupSelection(group.id)}
+                  accessibilityLabel={`${group.name}${
+                    selectedGroupIds.includes(group.id) ? ', selected' : ''
+                  }`}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selectedGroupIds.includes(group.id) }}
                 >
-                  {group.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-
-            {/* Inline group creation */}
-            {isCreatingGroup ? (
-              <View style={styles.inlineGroupCreate}>
-                <TextInput
-                  style={styles.inlineGroupInput}
-                  value={newGroupName}
-                  onChangeText={setNewGroupName}
-                  placeholder="Group name"
-                  accessibilityLabel="New group name"
-                />
-                <TextInput
-                  style={[styles.inlineGroupInput, styles.colorInput]}
-                  value={newGroupColor}
-                  onChangeText={setNewGroupColor}
-                  placeholder="#FF0000"
-                  accessibilityLabel="Group color (hex)"
-                  autoCapitalize="characters"
-                  maxLength={7}
-                />
-                <TouchableOpacity
-                  style={styles.inlineGroupButton}
-                  onPress={handleCreateGroup}
-                  accessibilityLabel="Create group"
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.inlineGroupButtonText}>Add</Text>
+                  {group.color && (
+                    <View
+                      style={[styles.groupColorDot, { backgroundColor: group.color }]}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.groupChipText,
+                      selectedGroupIds.includes(group.id) && styles.groupChipTextSelected,
+                    ]}
+                  >
+                    {group.name}
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.inlineGroupCancelButton}
-                  onPress={() => {
-                    setIsCreatingGroup(false);
-                    setNewGroupName('');
-                    setNewGroupColor('');
-                  }}
-                  accessibilityLabel="Cancel group creation"
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.inlineGroupCancelText}>×</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.addGroupChip}
-                onPress={() => setIsCreatingGroup(true)}
-                accessibilityLabel="Create new group"
-                accessibilityRole="button"
-              >
-                <Text style={styles.addGroupChipText}>+ New Group</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.noGroupsText}>
+              No groups yet. Create groups from the Groups screen.
+            </Text>
+          )}
         </View>
       </ScrollView>
 
@@ -605,71 +521,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginRight: 6,
   },
-  addGroupChip: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    borderStyle: 'dashed',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 8,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  addGroupChipText: {
-    color: '#007AFF',
+  noGroupsText: {
     fontSize: 14,
-    fontWeight: '600',
-  },
-  inlineGroupCreate: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    width: '100%',
-    marginTop: 8,
-  },
-  inlineGroupInput: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    minHeight: 44,
-    minWidth: 100,
-  },
-  colorInput: {
-    flex: 0,
-    width: 90,
-  },
-  inlineGroupButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginRight: 4,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  inlineGroupButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  inlineGroupCancelButton: {
-    padding: 10,
-    minWidth: 44,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  inlineGroupCancelText: {
-    fontSize: 24,
-    color: '#999',
+    color: COLORS.text.light,
+    fontStyle: 'italic',
   },
   buttonContainer: {
     flexDirection: 'row',

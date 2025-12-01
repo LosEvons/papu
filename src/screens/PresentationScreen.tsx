@@ -19,6 +19,7 @@ import {
   Animated,
   StatusBar,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
@@ -27,6 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation';
 import { useAppData } from '../contexts/AppDataContext';
 import { Card, UUID, CARD_CATEGORY_COLORS, CardCategory, CARD_CATEGORIES, CARD_CATEGORY_LABELS } from '../models/types';
+import { COLORS, SPACING, BORDER_RADIUS } from '../utils/theme';
 
 type PresentationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Presentation'>;
 
@@ -328,7 +330,11 @@ export function PresentationScreen() {
             )}
           </View>
         ) : (
-          <View style={styles.emptyState}>
+          <ScrollView 
+            style={styles.emptyStateScroll}
+            contentContainerStyle={styles.emptyState}
+            showsVerticalScrollIndicator={true}
+          >
             {/* Favorites carousel - only show if there are favorites */}
             {favoriteCards.length > 0 && (
               <View style={styles.favoritesContainer}>
@@ -439,7 +445,7 @@ export function PresentationScreen() {
                 </View>
               </View>
             )}
-          </View>
+          </ScrollView>
         )}
       </View>
 
@@ -643,11 +649,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
-  emptyState: {
+  emptyStateScroll: {
     flex: 1,
+    width: '100%',
+  },
+  emptyState: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
+    paddingVertical: SPACING.xl,
+    paddingBottom: 40,
   },
   tapToSearchArea: {
     padding: 40,

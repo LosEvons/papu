@@ -21,6 +21,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAppData } from '../contexts/AppDataContext';
 import { Group, UUID } from '../models/types';
 import { formatDate } from '../utils/format';
+import { COLORS, SPACING, BORDER_RADIUS } from '../utils/theme';
 
 /** Preset color palette for groups */
 const PRESET_COLORS = [
