@@ -29,10 +29,14 @@ type PresentationScreenNavigationProp = NativeStackNavigationProp<RootStackParam
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-/** Swipe threshold to trigger actions */
+/** Minimum distance to detect a gesture */
+const MIN_GESTURE_DISTANCE = 10;
+/** Horizontal swipe threshold to trigger question mode */
 const SWIPE_THRESHOLD = 50;
 /** Vertical swipe threshold to close card */
 const SWIPE_UP_THRESHOLD = 80;
+/** Maximum vertical movement during horizontal swipe */
+const VERTICAL_TOLERANCE = 50;
 
 /**
  * Presentation screen component.
@@ -58,7 +62,7 @@ export function PresentationScreen() {
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
         // Respond to both horizontal and vertical swipes
-        return Math.abs(gestureState.dx) > 10 || Math.abs(gestureState.dy) > 10;
+        return Math.abs(gestureState.dx) > MIN_GESTURE_DISTANCE || Math.abs(gestureState.dy) > MIN_GESTURE_DISTANCE;
       },
       onPanResponderMove: (_, gestureState) => {
         // Track horizontal swipes (right only for question mode)
@@ -80,7 +84,7 @@ export function PresentationScreen() {
           setIsQuestionMode(false);
         }
         // Swipe right detected - toggle question mode
-        else if (gestureState.dx > SWIPE_THRESHOLD && Math.abs(gestureState.dy) < 50) {
+        else if (gestureState.dx > SWIPE_THRESHOLD && Math.abs(gestureState.dy) < VERTICAL_TOLERANCE) {
           setIsQuestionMode((prev) => !prev);
         }
         
