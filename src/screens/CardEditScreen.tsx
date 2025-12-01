@@ -3,7 +3,7 @@
  * Supports title, text, image picking, and group assignment.
  */
 
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import {
   View,
   TextInput,
@@ -23,6 +23,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { RootStackParamList } from '../navigation';
 import { useAppData } from '../contexts/AppDataContext';
 import { Card, Group, UUID } from '../models/types';
+import { HEX_COLOR_REGEX } from '../utils/constants';
+
+/** Image picker configuration options */
+const IMAGE_PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
+  mediaTypes: ['images'],
+  allowsEditing: true,
+  aspect: [1, 1],
+  quality: 0.8,
+};
 
 type CardEditScreenProps = NativeStackScreenProps<RootStackParamList, 'CardEdit'>;
 
@@ -140,12 +149,7 @@ export function CardEditScreen({ navigation, route }: CardEditScreenProps) {
    */
   const handlePickImage = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
+      const result = await ImagePicker.launchImageLibraryAsync(IMAGE_PICKER_OPTIONS);
 
       if (!result.canceled && result.assets.length > 0) {
         setImageUri(result.assets[0].uri);
@@ -183,7 +187,7 @@ export function CardEditScreen({ navigation, route }: CardEditScreenProps) {
     }
 
     // Validate color format if provided
-    if (newGroupColor && !/^#[0-9A-Fa-f]{6}$/.test(newGroupColor)) {
+    if (newGroupColor && !HEX_COLOR_REGEX.test(newGroupColor)) {
       Alert.alert('Error', 'Color must be a valid hex color (e.g., #FF0000)');
       return;
     }

@@ -20,6 +20,7 @@ import * as Clipboard from 'expo-clipboard';
 
 import { useAppData } from '../contexts/AppDataContext';
 import { AppData } from '../models/types';
+import { RESET_CONFIRMATION_TEXT } from '../utils/constants';
 
 /**
  * Settings screen component.
@@ -186,7 +187,7 @@ export function SettingsScreen() {
    * Handle data reset with strong confirmation
    */
   const handleReset = () => {
-    if (resetConfirmText !== 'RESET') {
+    if (resetConfirmText !== RESET_CONFIRMATION_TEXT) {
       Alert.alert(
         'Confirmation Required',
         'Please type "RESET" in the confirmation field to delete all data.'
@@ -310,12 +311,12 @@ export function SettingsScreen() {
           <TouchableOpacity
             style={[
               styles.dangerButton,
-              resetConfirmText !== 'RESET' && styles.dangerButtonDisabled,
+              resetConfirmText !== RESET_CONFIRMATION_TEXT && styles.dangerButtonDisabled,
             ]}
             onPress={handleReset}
             accessibilityLabel="Reset all data"
             accessibilityRole="button"
-            accessibilityState={{ disabled: resetConfirmText !== 'RESET' }}
+            accessibilityState={{ disabled: resetConfirmText !== RESET_CONFIRMATION_TEXT }}
           >
             <Text style={styles.dangerButtonText}>Reset All Data</Text>
           </TouchableOpacity>

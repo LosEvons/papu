@@ -17,6 +17,9 @@ import {
 import { Card } from '../models/types';
 import { formatDate } from '../utils/format';
 
+/** Maximum length for text snippet preview */
+const TEXT_SNIPPET_MAX_LENGTH = 50;
+
 /** CardRow component props */
 interface CardRowProps {
   /** Card data to display */
@@ -104,8 +107,8 @@ export function CardRow({ card, onPress, onToggleFavorite, onDelete }: CardRowPr
 
   // Truncate text for preview
   const textSnippet = card.text
-    ? card.text.length > 50
-      ? `${card.text.substring(0, 50)}...`
+    ? card.text.length > TEXT_SNIPPET_MAX_LENGTH
+      ? `${card.text.substring(0, TEXT_SNIPPET_MAX_LENGTH)}...`
       : card.text
     : '';
 

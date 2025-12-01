@@ -33,7 +33,7 @@ export function useDebouncedEffect(
     return () => {
       clearTimeout(timeoutId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps array is intentionally spread to avoid infinite re-renders while still triggering on changes
   }, deps);
 
   // Cleanup on unmount

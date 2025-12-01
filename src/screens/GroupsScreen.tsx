@@ -20,6 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAppData } from '../contexts/AppDataContext';
 import { Group, UUID } from '../models/types';
 import { formatDate } from '../utils/format';
+import { HEX_COLOR_REGEX } from '../utils/constants';
 
 /**
  * Groups screen component.
@@ -43,7 +44,7 @@ export function GroupsScreen() {
     }
 
     // Validate color format if provided
-    if (newColor && !/^#[0-9A-Fa-f]{6}$/.test(newColor)) {
+    if (newColor && !HEX_COLOR_REGEX.test(newColor)) {
       Alert.alert('Error', 'Color must be a valid hex color (e.g., #FF0000)');
       return;
     }

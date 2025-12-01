@@ -16,8 +16,8 @@ import { AppData, Card, Group, UUID } from '../models/types';
 import { loadAppData, saveAppData } from '../storage/storage';
 import { useDebouncedEffect } from '../hooks/useDebouncedEffect';
 
-/** Debounce delay for saving to AsyncStorage (in ms) */
-const SAVE_DEBOUNCE_MS = 300;
+/** Debounce delay for saving to AsyncStorage (in milliseconds) */
+const SAVE_DEBOUNCE_DELAY_MS = 300;
 
 // Action Types
 type AppAction =
@@ -189,7 +189,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       });
     },
     [state],
-    SAVE_DEBOUNCE_MS
+    SAVE_DEBOUNCE_DELAY_MS
   );
 
   const contextValue: AppDataContextValue = {
