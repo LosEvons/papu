@@ -4,8 +4,10 @@
  */
 
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Platform, StatusBar as RNStatusBar, View, StyleSheet } from 'react-native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UUID } from '../models/types';
 
 import { HomeScreen } from '../screens/HomeScreen';
@@ -26,37 +28,84 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /**
+ * Custom theme with safe area aware header styles
+ */
+function useNavigatorTheme() {
+  const insets = useSafeAreaInsets();
+  
+  // Get the status bar height for Android edge-to-edge mode
+  const statusBarHeight = Platform.OS === 'android' 
+    ? Math.max(RNStatusBar.currentHeight || 0, insets.top)
+    : insets.top;
+
+  const screenOptions: NativeStackNavigationOptions = {
+    headerStyle: {
+      backgroundColor: '#f5f5f5',
+    },
+    headerTitleStyle: {
+      fontWeight: '600',
+    },
+  };
+
+  return { screenOptions, statusBarHeight };
+}
+
+/**
  * Main navigation component with native stack navigator.
  * Presentation mode is the default/home screen.
  */
 export function AppNavigation() {
+  const { screenOptions, statusBarHeight } = useNavigatorTheme();
+
+  // Create a wrapper style for screens that need status bar offset on Android
+  const screenContentStyle = Platform.OS === 'android' && statusBarHeight > 0
+    ? { paddingTop: statusBarHeight }
+    : undefined;
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Presentation">
+    <NavigationContainer theme={DefaultTheme}>
+      <Stack.Navigator 
+        initialRouteName="Presentation"
+        screenOptions={screenOptions}
+      >
         <Stack.Screen
           name="Presentation"
           component={PresentationScreen}
-          options={{ headerShown: false }}
+          options={{ 
+            headerShown: false,
+          }}
         />
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ title: 'Manage Cards' }}
+          options={{ 
+            title: 'Manage Cards',
+            contentStyle: screenContentStyle,
+          }}
         />
         <Stack.Screen
           name="CardEdit"
           component={CardEditScreen}
-          options={{ title: 'Edit Card' }}
+          options={{ 
+            title: 'Edit Card',
+            contentStyle: screenContentStyle,
+          }}
         />
         <Stack.Screen
           name="Groups"
           component={GroupsScreen}
-          options={{ title: 'Groups' }}
+          options={{ 
+            title: 'Groups',
+            contentStyle: screenContentStyle,
+          }}
         />
         <Stack.Screen
           name="Settings"
           component={SettingsScreen}
-          options={{ title: 'Settings' }}
+          options={{ 
+            title: 'Settings',
+            contentStyle: screenContentStyle,
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
