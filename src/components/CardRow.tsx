@@ -1,6 +1,7 @@
 /**
  * Card row component for displaying cards in a list.
  * Shows image, title, text snippet, updatedAt, and favorite status.
+ * Cards are color-coded by their category.
  */
 
 import React from 'react';
@@ -14,7 +15,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { Card } from '../models/types';
+import { Card, CARD_CATEGORY_COLORS } from '../models/types';
 import { formatDate } from '../utils/format';
 
 /** Maximum length for text snippet preview */
@@ -112,9 +113,12 @@ export function CardRow({ card, onPress, onToggleFavorite, onDelete }: CardRowPr
       : card.text
     : '';
 
+  // Get the category color for the left border
+  const categoryColor = CARD_CATEGORY_COLORS[card.category || 'other'];
+
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, { borderLeftColor: categoryColor }]}
       onPress={onPress}
       onLongPress={handleLongPress}
       accessibilityLabel={`Card: ${card.title}${card.favorite ? ', Favorite' : ''}`}
@@ -159,6 +163,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ccc',
     minHeight: 72,
     alignItems: 'center',
+    borderLeftWidth: 4,
   },
   image: {
     width: 56,

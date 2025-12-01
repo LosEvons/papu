@@ -1,13 +1,8 @@
-import { registerRootComponent } from 'expo';
-import { Platform } from 'react-native';
+// Polyfill crypto.getRandomValues for uuid on native platforms.
+// This MUST be imported before anything that might use uuid.
+import 'react-native-get-random-values';
 
-// On native (iOS/Android) make sure `crypto.getRandomValues` is available
-// for libraries like `uuid`. Guard the import for web.
-if (Platform.OS !== 'web') {
-	// Use require so bundlers don't try to resolve this for web builds.
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
-	require('react-native-get-random-values');
-}
+import { registerRootComponent } from 'expo';
 
 import App from './App';
 

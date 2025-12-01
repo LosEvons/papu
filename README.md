@@ -9,6 +9,7 @@ An Expo-managed React Native TypeScript app for managing communication cards wit
 - **Favorites**: Mark cards as favorites for quick access
 - **Search**: Filter cards by title and text content
 - **Filtering**: Filter cards by group or favorites
+- **Presentation Mode**: Minimalist full-screen display mode for communication cards with quick search
 - **Image Support**: Attach images to cards using expo-image-picker
 - **Data Persistence**: All data is automatically saved to AsyncStorage
 - **Export/Import**: Export all data as JSON and import from text or clipboard
@@ -98,7 +99,8 @@ src/
     ├── HomeScreen.tsx         # Main card list screen
     ├── CardEditScreen.tsx     # Create/edit card screen
     ├── GroupsScreen.tsx       # Group management screen
-    └── SettingsScreen.tsx     # Export/import/reset screen
+    ├── SettingsScreen.tsx     # Export/import/reset screen
+    └── PresentationScreen.tsx # Minimalist card display mode
 ```
 
 ## Dependencies
@@ -141,6 +143,8 @@ src/
 - [ ] Error banner shown if loading fails
 - [ ] All touch targets are at least 44x44 points
 - [ ] All actionable elements have accessibility labels
+- [ ] Presentation mode displays cards in full-screen minimalist view
+- [ ] Presentation mode has search functionality to find and select cards
 
 ## Notes
 

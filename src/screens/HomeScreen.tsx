@@ -1,6 +1,6 @@
 /**
  * Home screen displaying the card list with filtering and search.
- * Main entry point for browsing and managing cards.
+ * This is the card management screen, accessed from the presentation mode.
  */
 
 import React, { useState, useMemo, useLayoutEffect } from 'react';
@@ -23,6 +23,8 @@ import { Card, Group, UUID } from '../models/types';
 import { FAB } from '../components/FAB';
 import { GroupPill } from '../components/GroupPill';
 import { CardRow } from '../components/CardRow';
+// Theme constants can be used for future styling consistency
+import { COLORS, SPACING, BORDER_RADIUS } from '../utils/theme';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -43,6 +45,16 @@ export function HomeScreen() {
   // Add header buttons for navigation
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Presentation')}
+          style={styles.headerButton}
+          accessibilityLabel="Back to presentation mode"
+          accessibilityRole="button"
+        >
+          <Text style={styles.headerButtonText}>← Present</Text>
+        </TouchableOpacity>
+      ),
       headerRight: () => (
         <View style={styles.headerButtons}>
           <TouchableOpacity
