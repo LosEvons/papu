@@ -40,6 +40,10 @@ const SWIPE_THRESHOLD = 50;
 const SWIPE_UP_THRESHOLD = 80;
 /** Maximum vertical movement during horizontal swipe */
 const VERTICAL_TOLERANCE = 50;
+/** Minimum top padding for status bar */
+const MIN_TOP_PADDING = 16;
+/** Additional padding below safe area inset */
+const TOP_BAR_PADDING = 8;
 
 /**
  * Presentation screen component.
@@ -227,7 +231,7 @@ export function PresentationScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
       {/* Top bar with manage and search buttons - with safe area insets */}
-      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) + 8 }]}>
+      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, MIN_TOP_PADDING) + TOP_BAR_PADDING }]}>
         <TouchableOpacity
           style={styles.manageButton}
           onPress={handleGoToManagement}
