@@ -60,6 +60,10 @@ export function PresentationScreen() {
   const [isQuestionMode, setIsQuestionMode] = useState(false);
   const [showGestureHints, setShowGestureHints] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<CardCategory | null>(null);
+  const [groupFilter, setGroupFilter] = useState<UUID | null>(null);
+
+  // Reference for favorites carousel
+  const favoritesRef = useRef<FlatList>(null);
 
   // Animation values for swipe feedback
   const swipeAnimX = useRef(new Animated.Value(0)).current;
@@ -121,7 +125,16 @@ export function PresentationScreen() {
   }, [selectedCardId, data.cards]);
 
   /**
-   * Filtered cards based on search query
+   * Get favorite cards for the carousel
+   */
+  const favoriteCards = useMemo(() => {
+    return data.cards
+      .filter((card) => card.favorite)
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }, [data.cards]);
+
+  /**
+   * Filtered cards based on search query and filters
    */
   const filteredCards = useMemo(() => {
     let cards = [...data.cards];
@@ -129,6 +142,11 @@ export function PresentationScreen() {
     // Filter by category if a category filter is set
     if (categoryFilter) {
       cards = cards.filter((card) => (card.category || 'other') === categoryFilter);
+    }
+
+    // Filter by group if a group filter is set
+    if (groupFilter) {
+      cards = cards.filter((card) => card.groupIds.includes(groupFilter));
     }
 
     if (searchQuery.trim()) {
@@ -144,7 +162,7 @@ export function PresentationScreen() {
     cards.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
     return cards;
-  }, [data.cards, searchQuery, categoryFilter]);
+  }, [data.cards, searchQuery, categoryFilter, groupFilter]);
 
   /**
    * Handle card selection from search results
@@ -153,6 +171,7 @@ export function PresentationScreen() {
     setSelectedCardId(cardId);
     setIsQuestionMode(false); // Reset question mode when selecting new card
     setCategoryFilter(null); // Clear category filter
+    setGroupFilter(null); // Clear group filter
     setSearchVisible(false);
     setSearchQuery('');
   };
@@ -171,6 +190,7 @@ export function PresentationScreen() {
     setSearchVisible(false);
     setSearchQuery('');
     setCategoryFilter(null);
+    setGroupFilter(null);
   };
 
   /**
@@ -178,6 +198,14 @@ export function PresentationScreen() {
    */
   const handleGoToManagement = () => {
     navigation.navigate('Home');
+  };
+
+  /**
+   * Open search modal with group filter
+   */
+  const handleSelectGroup = (groupId: UUID) => {
+    setGroupFilter(groupId);
+    setSearchVisible(true);
   };
 
   /**
@@ -299,6 +327,56 @@ export function PresentationScreen() {
           </View>
         ) : (
           <View style={styles.emptyState}>
+            {/* Favorites carousel - only show if there are favorites */}
+            {favoriteCards.length > 0 && (
+              <View style={styles.favoritesContainer}>
+                <Text style={styles.sectionLabel}>⭐ Favorites:</Text>
+                <FlatList
+                  ref={favoritesRef}
+                  data={favoriteCards}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  pagingEnabled
+                  snapToInterval={screenWidth * 0.7 + 16}
+                  decelerationRate="fast"
+                  contentContainerStyle={styles.favoritesCarousel}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }: { item: Card }) => {
+                    const cardCategory = item.category || 'other';
+                    return (
+                      <TouchableOpacity
+                        style={[
+                          styles.favoriteCard,
+                          { borderColor: CARD_CATEGORY_COLORS[cardCategory] },
+                        ]}
+                        onPress={() => handleSelectCard(item.id)}
+                        activeOpacity={0.8}
+                        accessibilityLabel={`Select favorite card: ${item.title}`}
+                        accessibilityRole="button"
+                      >
+                        {item.imageUri ? (
+                          <Image
+                            source={{ uri: item.imageUri }}
+                            style={styles.favoriteCardImage}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={[styles.favoriteCardPlaceholder, { backgroundColor: CARD_CATEGORY_COLORS[cardCategory] }]}>
+                            <Text style={styles.favoriteCardPlaceholderText}>
+                              {item.title.charAt(0).toUpperCase()}
+                            </Text>
+                          </View>
+                        )}
+                        <Text style={styles.favoriteCardTitle} numberOfLines={2}>
+                          {item.title}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }}
+                />
+              </View>
+            )}
+
             {/* Tap to search area */}
             <TouchableOpacity
               style={styles.tapToSearchArea}
@@ -314,7 +392,7 @@ export function PresentationScreen() {
 
             {/* Category buttons */}
             <View style={styles.categoryButtonsContainer}>
-              <Text style={styles.categoryLabel}>Browse by category:</Text>
+              <Text style={styles.sectionLabel}>Browse by category:</Text>
               <View style={styles.categoryButtons}>
                 {CARD_CATEGORIES.map((category) => (
                   <TouchableOpacity
@@ -334,6 +412,31 @@ export function PresentationScreen() {
                 ))}
               </View>
             </View>
+
+            {/* Group buttons - only show if there are groups */}
+            {data.groups.length > 0 && (
+              <View style={styles.groupButtonsContainer}>
+                <Text style={styles.sectionLabel}>Browse by group:</Text>
+                <View style={styles.groupButtons}>
+                  {data.groups.map((group) => (
+                    <TouchableOpacity
+                      key={group.id}
+                      style={[
+                        styles.groupButton,
+                        { backgroundColor: group.color || '#666' },
+                      ]}
+                      onPress={() => handleSelectGroup(group.id)}
+                      accessibilityLabel={`Browse ${group.name} cards`}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.groupButtonText}>
+                        {group.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -363,7 +466,11 @@ export function PresentationScreen() {
               <Text style={styles.searchCloseText}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.searchTitle}>
-              {categoryFilter ? CARD_CATEGORY_LABELS[categoryFilter] : 'Find Card'}
+              {categoryFilter 
+                ? CARD_CATEGORY_LABELS[categoryFilter] 
+                : groupFilter 
+                  ? data.groups.find(g => g.id === groupFilter)?.name || 'Group'
+                  : 'Find Card'}
             </Text>
             <View style={styles.searchCloseButton} />
           </View>
@@ -384,13 +491,29 @@ export function PresentationScreen() {
             </View>
           )}
 
+          {/* Group filter indicator */}
+          {groupFilter && (
+            <View style={[styles.categoryFilterBanner, { backgroundColor: data.groups.find(g => g.id === groupFilter)?.color || '#666' }]}>
+              <Text style={styles.categoryFilterText}>
+                Showing {data.groups.find(g => g.id === groupFilter)?.name || 'Group'} cards
+              </Text>
+              <TouchableOpacity
+                onPress={() => setGroupFilter(null)}
+                accessibilityLabel="Clear group filter"
+                accessibilityRole="button"
+              >
+                <Text style={styles.categoryFilterClear}>✕ Clear</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={styles.searchInputContainer}>
             <TextInput
               style={styles.searchInput}
               placeholder="Search cards..."
               value={searchQuery}
               onChangeText={setSearchQuery}
-              autoFocus={!categoryFilter}
+              autoFocus={!categoryFilter && !groupFilter}
               accessibilityLabel="Search cards"
               accessibilityHint="Type to filter cards by title or text"
               clearButtonMode="while-editing"
@@ -542,11 +665,6 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 16,
   },
-  categoryLabel: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 16,
-  },
   categoryButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -564,6 +682,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#fff',
     fontWeight: '600',
+  },
+  groupButtonsContainer: {
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 16,
+    marginTop: 24,
+  },
+  groupButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  groupButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  groupButtonText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  sectionLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 16,
+  },
+  favoritesContainer: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  favoritesCarousel: {
+    paddingHorizontal: 16,
+  },
+  favoriteCard: {
+    width: screenWidth * 0.7,
+    marginRight: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    borderWidth: 3,
+    padding: 12,
+    alignItems: 'center',
+  },
+  favoriteCardImage: {
+    width: screenWidth * 0.6,
+    height: screenWidth * 0.4,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  favoriteCardPlaceholder: {
+    width: screenWidth * 0.6,
+    height: screenWidth * 0.4,
+    borderRadius: 12,
+    marginBottom: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  favoriteCardPlaceholderText: {
+    fontSize: 64,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  favoriteCardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    textAlign: 'center',
   },
   categoryFilterBanner: {
     flexDirection: 'row',

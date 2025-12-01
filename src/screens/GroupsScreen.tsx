@@ -14,13 +14,35 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
 import { useAppData } from '../contexts/AppDataContext';
 import { Group, UUID } from '../models/types';
 import { formatDate } from '../utils/format';
-import { HEX_COLOR_REGEX } from '../utils/constants';
+
+/** Preset color palette for groups */
+const PRESET_COLORS = [
+  '#E74C3C', // Red
+  '#E91E63', // Pink
+  '#9C27B0', // Purple
+  '#673AB7', // Deep Purple
+  '#3F51B5', // Indigo
+  '#2196F3', // Blue
+  '#03A9F4', // Light Blue
+  '#00BCD4', // Cyan
+  '#009688', // Teal
+  '#4CAF50', // Green
+  '#8BC34A', // Light Green
+  '#CDDC39', // Lime
+  '#FFEB3B', // Yellow
+  '#FFC107', // Amber
+  '#FF9800', // Orange
+  '#FF5722', // Deep Orange
+  '#795548', // Brown
+  '#607D8B', // Blue Grey
+];
 
 /**
  * Groups screen component.
@@ -31,8 +53,9 @@ export function GroupsScreen() {
 
   // Create group form state
   const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState('');
+  const [newColor, setNewColor] = useState(PRESET_COLORS[0]);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   /**
    * Handle creating a new group
@@ -43,24 +66,19 @@ export function GroupsScreen() {
       return;
     }
 
-    // Validate color format if provided
-    if (newColor && !HEX_COLOR_REGEX.test(newColor)) {
-      Alert.alert('Error', 'Color must be a valid hex color (e.g., #FF0000)');
-      return;
-    }
-
     const newGroup: Group = {
       id: uuidv4(),
       name: newName.trim(),
-      color: newColor.trim() || undefined,
+      color: newColor,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     dispatch({ type: 'ADD_GROUP', payload: newGroup });
     setNewName('');
-    setNewColor('');
+    setNewColor(PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)]);
     setNameError(null);
+    setShowColorPicker(false);
   };
 
   /**
@@ -199,15 +217,14 @@ export function GroupsScreen() {
             accessibilityHint="Required field"
             returnKeyType="next"
           />
-          <TextInput
-            style={styles.colorInput}
-            value={newColor}
-            onChangeText={setNewColor}
-            placeholder="#FF0000"
-            accessibilityLabel="Group color (optional hex)"
-            autoCapitalize="characters"
-            maxLength={7}
-          />
+          <TouchableOpacity
+            style={[styles.colorPreview, { backgroundColor: newColor }]}
+            onPress={() => setShowColorPicker(!showColorPicker)}
+            accessibilityLabel="Select color"
+            accessibilityRole="button"
+          >
+            <Text style={styles.colorPreviewText}>🎨</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.createButton}
             onPress={handleCreateGroup}
@@ -218,6 +235,35 @@ export function GroupsScreen() {
           </TouchableOpacity>
         </View>
         {nameError && <Text style={styles.errorText}>{nameError}</Text>}
+        
+        {/* Color picker palette */}
+        {showColorPicker && (
+          <View style={styles.colorPicker}>
+            <Text style={styles.colorPickerLabel}>Select a color:</Text>
+            <View style={styles.colorGrid}>
+              {PRESET_COLORS.map((color) => (
+                <TouchableOpacity
+                  key={color}
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: color },
+                    newColor === color && styles.colorOptionSelected,
+                  ]}
+                  onPress={() => {
+                    setNewColor(color);
+                    setShowColorPicker(false);
+                  }}
+                  accessibilityLabel={`Select color ${color}`}
+                  accessibilityRole="button"
+                >
+                  {newColor === color && (
+                    <Text style={styles.colorOptionCheck}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Group list */}
@@ -269,15 +315,18 @@ const styles = StyleSheet.create({
     marginRight: 8,
     minHeight: 44,
   },
-  colorInput: {
-    width: 90,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
+  colorPreview: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 8,
-    minHeight: 44,
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  colorPreviewText: {
+    fontSize: 20,
   },
   inputError: {
     borderWidth: 1,
@@ -303,6 +352,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  colorPicker: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#ddd',
+  },
+  colorPickerLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  colorOption: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  colorOptionSelected: {
+    borderColor: '#000',
+  },
+  colorOptionCheck: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
   listContent: {
     flexGrow: 1,
   },
@@ -319,9 +404,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   colorIndicator: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     marginRight: 12,
   },
   groupTextContainer: {
