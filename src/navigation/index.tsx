@@ -12,6 +12,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { CardEditScreen } from '../screens/CardEditScreen';
 import { GroupsScreen } from '../screens/GroupsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { PresentationScreen } from '../screens/PresentationScreen';
 
 /** Navigation parameter types for all screens */
 export type RootStackParamList = {
@@ -19,6 +20,7 @@ export type RootStackParamList = {
   CardEdit: { cardId?: UUID };
   Groups: undefined;
   Settings: undefined;
+  Presentation: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -49,6 +51,11 @@ export function AppNavigation() {
           name="Settings"
           component={SettingsScreen}
           options={{ title: 'Settings' }}
+        />
+        <Stack.Screen
+          name="Presentation"
+          component={PresentationScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

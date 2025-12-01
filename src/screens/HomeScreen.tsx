@@ -43,6 +43,16 @@ export function HomeScreen() {
   // Add header buttons for navigation
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Presentation')}
+          style={styles.headerButton}
+          accessibilityLabel="Enter presentation mode"
+          accessibilityRole="button"
+        >
+          <Text style={styles.headerButtonText}>▶️</Text>
+        </TouchableOpacity>
+      ),
       headerRight: () => (
         <View style={styles.headerButtons}>
           <TouchableOpacity
