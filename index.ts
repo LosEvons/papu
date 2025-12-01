@@ -1,4 +1,13 @@
 import { registerRootComponent } from 'expo';
+import { Platform } from 'react-native';
+
+// On native (iOS/Android) make sure `crypto.getRandomValues` is available
+// for libraries like `uuid`. Guard the import for web.
+if (Platform.OS !== 'web') {
+	// Use require so bundlers don't try to resolve this for web builds.
+	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	require('react-native-get-random-values');
+}
 
 import App from './App';
 
